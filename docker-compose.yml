@@ -1,0 +1,12 @@
+version: '3.9'
+services:
+  db:
+    container_name: postgres-books
+    restart: always
+    image: postgres
+    ports:
+      - 5431:5432
+    environment:
+      - POSTGRES_USER=postgres-books
+      - POSTGRES_PASSWORD=rahasia
+      - POSTGRES_DB=dbbooks
