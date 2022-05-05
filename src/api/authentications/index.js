@@ -4,8 +4,8 @@ const routes = require('./routes');
 module.exports = {
   name: 'authentications',
   version: '1.0.0',
-  register: async (server, { service }) => {
-    const notesHandler = new AuthenticationsHandler(service);
-    server.route(routes(notesHandler));
+  register: async (server) => {
+    const authenticatiosHandler = new AuthenticationsHandler();
+    server.route(routes(authenticatiosHandler));
   },
 };

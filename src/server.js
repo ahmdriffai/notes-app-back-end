@@ -3,6 +3,7 @@ require('dotenv').config();
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
 const authentications = require('./api/authentications');
+const collaborations = require('./api/collaborations');
 const notes = require('./api/notes');
 const users = require('./api/users');
 
@@ -49,6 +50,9 @@ const init = async () => {
     },
     {
       plugin: authentications,
+    },
+    {
+      plugin: collaborations,
     },
   ]);
 
