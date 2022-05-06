@@ -6,6 +6,7 @@ const authentications = require('./api/authentications');
 const collaborations = require('./api/collaborations');
 const notes = require('./api/notes');
 const users = require('./api/users');
+const _exports = require('./api/exports');
 
 const init = async () => {
   const server = Hapi.server({
@@ -53,6 +54,9 @@ const init = async () => {
     },
     {
       plugin: collaborations,
+    },
+    {
+      plugin: _exports,
     },
   ]);
 
