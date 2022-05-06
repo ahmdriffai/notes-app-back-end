@@ -3,3 +3,4 @@ node_modules
 .prod.env
 notes-api-webserver-keypair.pem
 notes-backend-keypair.pem
+src/api/uploads/file
