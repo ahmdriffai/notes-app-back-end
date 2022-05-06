@@ -4,3 +4,5 @@ node_modules
 notes-api-webserver-keypair.pem
 notes-backend-keypair.pem
 src/api/uploads/file
+faideveloper_accessKeys.csv
+new_user_credentials.csv

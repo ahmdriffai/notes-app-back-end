@@ -1,6 +1,5 @@
 require('dotenv').config();
 
-const path = require('path');
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
 const Inert = require('@hapi/inert');
@@ -10,10 +9,10 @@ const notes = require('./api/notes');
 const users = require('./api/users');
 const _exports = require('./api/exports');
 const uploads = require('./api/uploads');
-const StorageService = require('./services/storage/StorageServce');
+const StorageService = require('./services/S3/StorageService');
 
 const init = async () => {
-  const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
+  const storageService = new StorageService();
 
   const server = Hapi.server({
     port: process.env.PORT,
