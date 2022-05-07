@@ -3,12 +3,14 @@ const { Pool } = require('pg');
 const AuthorizationError = require('../../exceptions/AuthorizationError');
 const InvariantError = require('../../exceptions/InvariantError');
 const NotFoundError = require('../../exceptions/NotFoundError');
+const ChaceService = require('../redis/ChaceService');
 const CollaborationsService = require('./CollaborationsService');
 
 class NotesService {
   constructor() {
     this._pool = new Pool();
     this._collaborationService = new CollaborationsService();
+    this._chaceService = new ChaceService();
   }
 
   async addNote({
@@ -29,35 +31,46 @@ class NotesService {
       throw new InvariantError('Catatan gagal ditambahkan');
     }
 
+    await this._chaceService.delete(`notes:${owner}`);
+
     return result.rows[0].id;
   }
 
   async getNotes(owner) {
-    const query = {
-      text: `SELECT notes.* FROM notes
-      LEFT JOIN collaborations ON collaborations.note_id = notes.id
-      WHERE notes.owner = $1 OR collaborations.user_id = $1
-      GROUP BY notes.id`,
-      values: [owner],
-    };
+    try {
+      const result = await this._chaceService.get(`notes:${owner}`);
+      return JSON.parse(result);
+    } catch (error) {
+      const query = {
+        text: `SELECT notes.* FROM notes
+        LEFT JOIN collaborations ON collaborations.note_id = notes.id
+        WHERE notes.owner = $1 OR collaborations.user_id = $1
+        GROUP BY notes.id`,
+        values: [owner],
+      };
 
-    const result = await this._pool.query(query);
+      const result = await this._pool.query(query);
 
-    return result.rows.map(({
-      id,
-      title,
-      body,
-      tags,
-      created_at,
-      updated_at,
-    }) => ({
-      id,
-      title,
-      body,
-      tags,
-      createdAt: created_at,
-      updatedAt: updated_at,
-    }));
+      const mappedResult = result.rows.map(({
+        id,
+        title,
+        body,
+        tags,
+        created_at,
+        updated_at,
+      }) => ({
+        id,
+        title,
+        body,
+        tags,
+        createdAt: created_at,
+        updatedAt: updated_at,
+      }));
+
+      await this._chaceService.set(`notes:${owner}`, JSON.stringify(mappedResult));
+
+      return mappedResult;
+    }
   }
 
   async getNoteById(noteId) {
@@ -96,7 +109,7 @@ class NotesService {
   async editNoteById(id, { title, body, tags }) {
     const updatedAt = new Date().toISOString();
     const query = {
-      text: 'UPDATE notes SET title = $1, body = $2, tags = $3, updated_at = $4 WHERE id = $5 RETURNING id',
+      text: 'UPDATE notes SET title = $1, body = $2, tags = $3, updated_at = $4 WHERE id = $5 RETURNING id, owner',
       values: [title, body, tags, updatedAt, id],
     };
 
@@ -105,11 +118,14 @@ class NotesService {
     if (!result.rows.length) {
       throw new NotFoundError('Gagal memperbarui catatan. Id tidak ditemukan');
     }
+
+    const { owner } = result.rows[0];
+    await this._chaceService.delete(`notes:${owner}`);
   }
 
   async deleteById(id) {
     const query = {
-      text: 'DELETE FROM notes WHERE id = $1 RETURNING id',
+      text: 'DELETE FROM notes WHERE id = $1 RETURNING id, owner',
       values: [id],
     };
 
@@ -118,6 +134,9 @@ class NotesService {
     if (!result.rows.length) {
       throw new NotFoundError('Catatan gagal dihapus. Id tidak ditemukan');
     }
+
+    const { owner } = result.rows[0];
+    await this._chaceService.delete(`notes:${owner}`);
   }
 
   async verifyNoteOwner(id, owner) {

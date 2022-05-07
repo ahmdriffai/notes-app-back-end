@@ -1,10 +1,12 @@
 const { nanoid } = require('nanoid');
 const { Pool } = require('pg');
 const InvariantError = require('../../exceptions/InvariantError');
+const ChaceService = require('../redis/ChaceService');
 
 class CollaborationsService {
   constructor() {
     this._pool = new Pool();
+    this._chaceService = new ChaceService();
   }
 
   // fungsi untuk menambahkan kolaborasi
@@ -22,6 +24,7 @@ class CollaborationsService {
       throw new InvariantError('Kolaborasi gagal ditambahkan');
     }
 
+    await this._chaceService.delete(`notes:${userId}`);
     return result.rows[0].id;
   }
 
@@ -37,6 +40,8 @@ class CollaborationsService {
     if (!result.rows.length) {
       throw new InvariantError('Kolaborasi gagal dihapus');
     }
+
+    await this._chaceService.delete(`notes:${userId}`);
   }
 
   // ungsi untuk memeriksa apakah user merupakan kolabolator dari catatan.
